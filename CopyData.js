@@ -1,7 +1,7 @@
 /* 
 The functions below do three things:
 
-1. onOpen creates a User Interface in the _23-24 OC FALL_SPRING CR/CA DATA. The user interface has one option, which is to run the updateCompletedCredits function.
+1. onOpen creates a User Interface in the '24-25 OC AT-RISK CR/CA DATABASE (for piloting for 24-25)' Google Spreadsheet. The user interface has one option, which is to run the updateCompletedCredits function.
 
 2. showConfirmationDialog is a simple confirmation to the user who selects to update the Completed Credits sheet.
 
@@ -35,7 +35,7 @@ function showConfirmationDialog() {
 }
 
 function openInstructionsVideo() {
-  let videoUrl = 'https://watch.screencastify.com/v/MuRWm5sSjy8R3bMQZPlI';
+  let videoUrl = 'https://youtu.be/L9qvNBAhtBw';
   let htmlOutput = HtmlService.createHtmlOutput('<script>window.open("' + videoUrl + '");google.script.host.close();</script>');
   SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Tutorial Video');
 }
@@ -44,29 +44,28 @@ function updateCompletedCredits() {
   let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   let autumnSpringDatasheet = spreadsheet.getSheetByName("Fall/Spring CR-CA Data");
   let completedCreditsSheet = spreadsheet.getSheetByName("Completed Credits");
-  let autumnSpringDataRange = autumnSpringDatasheet.getRange("A2:T" + autumnSpringDatasheet.getLastRow());
-  let existingDataRange = completedCreditsSheet.getRange("A2:M" + completedCreditsSheet.getLastRow());
+  let autumnSpringDataRange = autumnSpringDatasheet.getRange("A2:Q" + autumnSpringDatasheet.getLastRow());
+  let existingDataRange = completedCreditsSheet.getRange("A2:L" + completedCreditsSheet.getLastRow());
   let existingData = existingDataRange.getValues();
   let newData = [];
   let counselorNotification = [];
-
   let autumnData = autumnSpringDataRange.getValues();
 
   for (let i = 0; i < autumnData.length; i++) {
     let row = autumnData[i];
     let isChecked = row[0]; // Checkbox in column A
-    let studentName = row[5].toString().toLowerCase(); // Student Name in column F
-    let studentID = row[6]; // Student ID in column G
-    let courseName = row[7].toString().toLowerCase(); // Course Name in column H
-    let courseNo = row[9]; // Course No in column J
-    let courseDateStart = row[10]; // Course Date Start in column K
-    let courseEndStart = row[11]; // CourseEndDate Start in column L
-    let courseGrade = row[12]; // CourseGrade in column M
-    let timeoncourse = row[16]; // timeoncourse in column Q
-    let url = row[17]; // LOC link in column R
+    let studentName = row[4].toString().toLowerCase(); // Student Name in column E
+    let studentID = row[5]; // Student ID in column F
+    let courseName = row[6].toString().toLowerCase(); // Course Name in column G
+    let courseNo = row[7]; // Course No in column H
+    let courseDateStart = row[8]; // Course Date Start in column I
+    let courseEndStart = row[9]; // CourseEndDate Start in column J
+    let courseGrade = row[10]; // CourseGrade in column K
+    let timeoncourse = row[14]; // timeoncourse in column O
+    let url = row[15]; // LOC link in column P
 
     if (!isChecked) {
-      continue; // Skip if not checked
+      continue; // Skip student if column A is not checked
     }
 
     let isDuplicate = false;
@@ -86,24 +85,24 @@ function updateCompletedCredits() {
     }
 
     if (isDuplicate) {
-      continue; // Skip if duplicate
+      continue; // Skip if student ID and course are duplicates
     }
 
     let newRow = [
-      row[5].toString().toUpperCase(), // Student Name
+      row[4].toString().toUpperCase(), // Student Name
       studentID, // Student ID
       courseName.toUpperCase(), // Course Name
       parseInt(courseNo,10), // Course ID
       courseDateStart, // Course Date Start
-      row[11], // Course Date Credit Earned
-      row[12] !== "" ? parseInt(row[12]) : "", // Course Grade Average
-      row[15], // Teacher of Record
-      row[16], // Hours on course if CA-MT completion
-      url, // LOC link
+      row[9], // Course Date Credit Earned
+      row[10] !== "" ? parseInt(row[10]) : "", // Course Grade Average
+      row[13], // Teacher of Record
+      row[14], // Hours on course if CA-MT completion
       "", // LS
       "" // NOTES
     ];
 
+    sendCounselorNotification(row[4], studentID, courseName.toUpperCase())
     newData.push(newRow);
   }
 
@@ -128,7 +127,7 @@ function updateCompletedCredits() {
     insertIndex++;
   }
 
-  completedCreditsSheet.getRange("A2:M" + completedCreditsSheet.getLastRow()).sort({ column: 2, ascending: true });
+  completedCreditsSheet.getRange("A2:L" + completedCreditsSheet.getLastRow()).sort({ column: 2, ascending: true });
 
   // Renumber rows in column A starting from 1
   let lastRow = completedCreditsSheet.getLastRow();
@@ -138,11 +137,9 @@ function updateCompletedCredits() {
   });
   completedCreditsSheet.getRange("A2:A" + lastRow).setValues(updatedRowNumbers);
 
-  sendCounselorNotification()
-
 }
 
-function sendCounselorNotification(student, course) {
+function sendCounselorNotification(student, id, course) {
   // Map of counselor names to their corresponding emails
   // let counselorEmails = {
   //   '(A-C) Appleby': 'janelle.appleby@nisd.net',
@@ -165,9 +162,33 @@ function sendCounselorNotification(student, course) {
     '(Head Counselor) Matta': 'alvaro.gomez@nisd.net'
   };
 
-  // Email
-  // Good afternoon,
-  // We are happy to report <<Noah Garza>> completed <<Economics for CR>>! 
-  // Thank you,
-  // Ms. Guajardo and Ms. Bleier
+  // Get the first letter of the student's last name
+  let lastNameFirstTwoLetters = student.split(",")[0].trim().substring(0,2).toUpperCase();
+
+  // Determine the counselor based on the first letter of the student's last name
+  let counselor;
+  if (lastNameFirstTwoLetters >= 'AA' && lastNameFirstTwoLetters <= 'CZ') {
+    counselor = '(A-C) Appleby';
+  } else if (lastNameFirstTwoLetters >= 'DA' && lastNameFirstTwoLetters <= 'HA') {
+    counselor = '(D-Ha) Hewgley';
+  } else if (lastNameFirstTwoLetters >= 'HE' && lastNameFirstTwoLetters <= 'MI') {
+    counselor = '(He-Mi) Ramos';
+  } else if (lastNameFirstTwoLetters >= 'MO' && lastNameFirstTwoLetters <= 'RZ') {
+    counselor = '(Mo-R) Clarke';
+  } else if (lastNameFirstTwoLetters >= 'SA' && lastNameFirstTwoLetters <= 'ZZ') {
+    counselor = '(S-Z) Pearson';
+  } else {
+    counselor = '(Head Counselor) Matta'; // default counselor
+  }
+
+  var recipient = counselorEmails[counselor]; // get the counselor's email;
+  var subject = "Student Completed CR/CA";
+  var body = `Dear Counselor,\n\nWe are happy to report ${student} (${id}), has completed: ${course}\n\nThank you,\nMs. Guajardo and Ms. Bleiera`;
+  
+  MailApp.sendEmail({
+    to: recipient,
+    subject: subject,
+    body: body
+  });
+
 }
