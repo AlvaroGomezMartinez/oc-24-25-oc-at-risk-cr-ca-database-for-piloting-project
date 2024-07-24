@@ -183,12 +183,14 @@ function sendCounselorNotification(student, id, course) {
 
   var recipient = counselorEmails[counselor]; // get the counselor's email;
   var subject = "Student Completed CR/CA";
-  var body = `Dear Counselor,\n\nWe are happy to report ${student} (${id}), has completed: ${course}\n\nThank you,\nMs. Guajardo and Ms. Bleiera`;
+  var senderEmail = "angela.guajardo@nisd.net, katherine.bleier@nisd.net";
+  var body = `Dear Counselor,\n\nWe are happy to report ${student} (${id}), has completed: ${course}\n\nWhat should they work on next or are they all done?\n\nThank you,\nMs. Guajardo and Mrs. Popp`;
   
   MailApp.sendEmail({
-    to: recipient,
-    subject: subject,
-    body: body
+      to: recipient,
+      subject: subject,
+      body: body,
+      from: senderEmail
   });
 
 }
